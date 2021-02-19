@@ -20,6 +20,7 @@ __copyright__ = """
 
 
 class TestBasics(unittest.TestCase):
+    def test_attribute(self):
         self.assertEqual(
             Forcast("0p25").times, {"grads_size": "81", "grads_step": "3hr"}
         )
