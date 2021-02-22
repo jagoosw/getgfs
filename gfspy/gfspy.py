@@ -1,6 +1,15 @@
+"""gfspy - A library that extracts information from the NOAA GFS forecast without using .grb2 files
+
+TODO
+----
+- Could add historic fetching from https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files-old/202003/20200328/gfs_4_20200328_1800_384.grb2.das
+    - Possibly beneficial for historical analysis since it should mean you don't have to download the whole shibang
+- Add export to .nc file with netcdf4 (maybe an optional dependancy)
+"""
 import requests, json, os, re, dateutil.parser
 from datetime import datetime, timedelta
 import pandas as pd
+import numpy as np
 
 __copyright__ = """
     gfspy - A library that extracts information from the NOAA GFS forecast without using .grb2 files
@@ -40,28 +49,78 @@ class Forcast:
         self.timestep = timestep
         self.times, self.coords, self.variables = get_attributes(resolution, timestep)
 
-    def get(self, variables, date_time, lat, lon, z=[]):
+    def get(self, variables, date_time, lat, lon, lev=[]):
         """Returns the latest forcast available for the requested date and time
 
         Args:
-            variables ([type]): [description]
-            date ([type]): [description]
-            time ([type]): [descriptionzw]
-            lat ([type]): [description]
-            lon ([type]): [description]
-            z (list, optional): [description]. Defaults to [].
+            variables (list): list of required variables by short name
+            date_time (string): datetime requested
+            lat (string): latitude in the format "[min_index:max_index]"
+            lon ([type]): longitude in the format "[min_index:max_index]"
+            z (list, optional): z level in the format "[min_index:max_index]". Defaults to [] meaning there is no level dependance.
         """
-        earliest_available = datetime.utcnow() - timedelta(days=7)
-        latest_available = datetime.utcnow() - timedelta(
-            hours=datetime.utcnow().hour
-            - 6 * (datetime.utcnow().hour // 6 - 1)
-            - int(self.times["grads_size"]) * int(self.times["grads_step"][0]),
-            minutes=datetime.utcnow().minute,
-            seconds=datetime.utcnow().second,
-            microseconds=datetime.utcnow().microsecond,
+
+        if isinstance(lat,str):
+            if lat[0]=="[" and lat[-1]=="]" and ":" in lat:
+                #Extract 2 values
+                #see which is bigger and smaller
+                #convert to [:] format
+            elif lat.isnumeric():
+                lat="[%s]"%self.value_to_index("lat",float(lat))
+            else:
+                raise ValueError("The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"%lat)
+
+
+        earliest_available = hour_round(datetime.utcnow() - timedelta(days=7))
+        latest_available = hour_round(
+            datetime.utcnow()
+            - timedelta(
+                hours=datetime.utcnow().hour
+                - 6 * (datetime.utcnow().hour // 6)
+                - int(self.times["grads_size"]) * int(self.times["grads_step"][0]),
+                minutes=datetime.utcnow().minute,
+                seconds=datetime.utcnow().second,
+                microseconds=datetime.utcnow().microsecond,
+            )
         )
-        if earliest_available < dateutil.parser.parse(date_time) < latest_available:
-            pass
+        desired_date = dateutil.parser.parse(date_time)
+        latest_forcast = latest_available - timedelta(
+            hours=int(self.times["grads_size"]) * int(self.times["grads_step"][0])
+        )
+        if earliest_available < desired_date < latest_available:
+            query_forcast = latest_forcast
+            while desired_date < query_forcast:
+                query_forcast -= timedelta(hours=6)
+
+            forcast_date = query_forcast.strftime("%Y%m%d")
+            forcast_time = query_forcast.strftime("_%Hz")
+
+            query_time = "[{t_ind}]".format(
+                t_ind=round(
+                    (desired_date - query_forcast).seconds
+                    / (int(self.times["grads_step"][0]) * 60 * 60)
+                )
+            )
+            query = ""
+            for variable in variables:
+                if variable not in self.variables.keys():
+                    raise ValueError(
+                        "The variable {name} is not a valid choice for this weather model".format(
+                            name=variable
+                        )
+                    )
+                if self.variables[variable]["level_dependent"] == True and lev == []:
+                    raise ValueError(
+                        "The variable {name} requires the altitude/level to be defined".format(
+                            name=variable
+                        )
+                    )
+                elif self.variables[variable]["level_dependent"] == True:
+                    query += "," + variable + query_time + lev + lat + lon
+                else:
+                    query += "," + variable + query_time + lat + lon
+            print(query)
+
         else:
             raise ValueError(
                 "Datetime requested ({dt}) is not available the moment, usually only the last weeks worth of forcasts are available and this model only extends {hours} hours forward.\nThis error may be caused by an uninterpretable datetime format.".format(
@@ -70,6 +129,14 @@ class Forcast:
                     dt=dateutil.parser.parse(date_time),
                 )
             )
+
+    def value_to_index(self, coord, value):
+        possibles = [
+            float(self.coords[coord]["resolution"]) * n
+            + float(self.coords[coord]["minimum"])
+            for n in range(0, int(self.coords[coord]["grads_size"]))
+        ]
+        return possibles.index(value)
 
 
 def get_attributes(res, step):
@@ -133,7 +200,7 @@ def get_attributes(res, step):
             )
         )
         if r.status_code != 200:
-            raise Exception("The forcast resolution and timestep was not found")
+            raise RuntimeError("The forcast resolution and timestep was not found")
         arrays = re.findall(r"ARRAY:\n(.*?)\n", r.text)
         for array in arrays:
             var = re.findall(r"(.*?)\[", array)[0].split()[1]
@@ -172,11 +239,18 @@ def extract_line(possibles, line):
     return None, None
 
 
+def hour_round(t):
+    return t.replace(second=0, microsecond=0, minute=0, hour=t.hour) + timedelta(
+        hours=t.minute // 30
+    )
+
+
 if __name__ == "__main__":
     test = False
-    f = Forcast("0p25")
+    f = Forcast("0p25", "1hr")
     print(f.times)
-    f.get(1, "20210218 12:00", 1, 1)
+    f.get(["dzdtprs"], "20210220 17:00", "0", "[1]", lev="[1]")
+    print(f.value_to_index("lat", 0))
     if test == True:
         os.remove(config_file)
         import shutil
