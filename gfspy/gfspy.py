@@ -50,22 +50,28 @@ if not os.path.isfile(config_file):
 
 
 class Forcast:
-    """Object that can be manipulated to get forcast information
-    """    
+    """Object that can be manipulated to get forcast information"""
+
     def __init__(self, resolution="0p25", timestep=""):
         """Setting up the forcast object by specifying the forcast type
 
         Args:
             resolution (str, optional): The forcast resulution, choices are 1p00, 0p50 and 0p25. Defaults to "0p25".
             timestep (str, optional): The timestep of the forcast to use, most do not have a choice but 0p25 can be 3hr (default) or 1hr. Defaults to "".
-        """        
+        """
         if timestep != "":
             timestep = "_" + timestep
 
-        if resolution not in ["1p00","0p50","0p25"]:
-            raise ValueError("You have entered an invalid forcast resulution, the choices are 1p00, 0p50 and 0p25. You entered %s"%resolution)
-        if timestep!="" or (timestep=="_1hr" and resolution=="0p25"):
-            raise ValueError("You have entered an invalid forcast timestep, the only choice is 1hr for 0p25 forcasts or the default. You entered %s"%timestep)
+        if resolution not in ["1p00", "0p50", "0p25"]:
+            raise ValueError(
+                "You have entered an invalid forcast resulution, the choices are 1p00, 0p50 and 0p25. You entered %s"
+                % resolution
+            )
+        if timestep != "" or (timestep == "_1hr" and resolution == "0p25"):
+            raise ValueError(
+                "You have entered an invalid forcast timestep, the only choice is 1hr for 0p25 forcasts or the default. You entered %s"
+                % timestep
+            )
         self.resolution = resolution
         self.timestep = timestep
         self.times, self.coords, self.variables = get_attributes(resolution, timestep)
@@ -86,13 +92,13 @@ class Forcast:
         """
 
         # Get forcast date run, date, time
-        forcast_date,forcast_time,query_time=self.datetime_to_forcast(date_time)
+        forcast_date, forcast_time, query_time = self.datetime_to_forcast(date_time)
 
         # Get latitude
-        lat=self.value_input_to_index("lat",lat)
+        lat = self.value_input_to_index("lat", lat)
 
         # Get longitude
-        lon=self.value_input_to_index("lon",lon)
+        lon = self.value_input_to_index("lon", lon)
 
         # Get lev
         lev = "[0:%s]" % int(
@@ -150,7 +156,7 @@ class Forcast:
 
         return File(r.text)
 
-    def datetime_to_forcast(self,date_time):
+    def datetime_to_forcast(self, date_time):
         earliest_available = hour_round(datetime.utcnow() - timedelta(days=7))
         latest_available = hour_round(
             datetime.utcnow()
@@ -190,10 +196,10 @@ class Forcast:
                     dt=dateutil.parser.parse(date_time),
                 )
             )
-        
-        return forcast_date,forcast_time,query_time
 
-    def value_input_to_index(self,coord,inpt):
+        return forcast_date, forcast_time, query_time
+
+    def value_input_to_index(self, coord, inpt):
         if isinstance(inpt, str):
             if inpt[0] == "[" and inpt[-1] == "]" and ":" in inpt:
                 val_1 = float(re.findall(r"\[(.*?):", inpt))
@@ -203,7 +209,7 @@ class Forcast:
                 ind = "[%s:%s]" % (val_min, val_max)
             else:
                 try:
-                    inpt=float(inpt)#isnumeric apparently doesn't work for floats
+                    inpt = float(inpt)  # isnumeric apparently doesn't work for floats
                 except:
                     raise ValueError(
                         "The format of the %s variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
@@ -212,9 +218,8 @@ class Forcast:
                 ind = "[%s]" % self.value_to_index(coord, inpt)
         else:
             ind = "[%s]" % self.value_to_index(coord, inpt)
-        
-        return ind
 
+        return ind
 
     def value_to_index(self, coord, value):
         possibles = [
@@ -222,39 +227,52 @@ class Forcast:
             + float(self.coords[coord]["minimum"])
             for n in range(0, int(self.coords[coord]["grads_size"]))
         ]
-        closest=min(possibles, key=lambda x:abs(x-value))
+        closest = min(possibles, key=lambda x: abs(x - value))
         return possibles.index(closest)
 
-    def search_names(self,variable,sensetivity=80):
-        if 'fuzzywuzzy.fuzz' not in sys.modules:
-            raise RuntimeError("You can not use search_name without fuzzywuzzy installed, please `pip install fuzzywuzzy`. Other functionality is still available")
+    def search_names(self, variable, sensetivity=80):
+        if "fuzzywuzzy.fuzz" not in sys.modules:
+            raise RuntimeError(
+                "You can not use search_name without fuzzywuzzy installed, please `pip install fuzzywuzzy`. Other functionality is still available"
+            )
 
-        possibles=[]
+        possibles = []
         for var in self.variables.keys():
             if "long_name" in self.variables[var].keys():
-                ln=fuzz.partial_ratio(self.variables[var]["long_name"],variable)
-                sn=fuzz.partial_ratio(var,variable)
-                if ln>sensetivity or sn>sensetivity:
-                    possibles.append((var,self.variables[var]["long_name"],ln+sn))
+                ln = fuzz.partial_ratio(self.variables[var]["long_name"], variable)
+                sn = fuzz.partial_ratio(var, variable)
+                if ln > sensetivity or sn > sensetivity:
+                    possibles.append((var, self.variables[var]["long_name"], ln + sn))
 
-        possibles=sorted(possibles, key=lambda tup: tup[2])
+        possibles = sorted(possibles, key=lambda tup: tup[2])
         return possibles
 
     def get_windprofile(self, date_time, lat, lon):
-        info=self.get(["ugrdprs","vgrdprs","ugrd2pv","vgrd2pv","hgtsfc","hgtprs"],date_time,lat,lon)
-        
+        info = self.get(
+            ["ugrdprs", "vgrdprs", "ugrd2pv", "vgrd2pv", "hgtsfc", "hgtprs"],
+            date_time,
+            lat,
+            lon,
+        )
 
-        u_wind=list(info.variables["ugrdprs"].data.flatten())+list(info.variables["ugrd2pv"].data.flatten())
-        v_wind=list(info.variables["vgrdprs"].data.flatten())+list(info.variables["vgrd2pv"].data.flatten())
+        u_wind = list(info.variables["ugrdprs"].data.flatten()) + list(
+            info.variables["ugrd2pv"].data.flatten()
+        )
+        v_wind = list(info.variables["vgrdprs"].data.flatten()) + list(
+            info.variables["vgrd2pv"].data.flatten()
+        )
 
-        #at the altitudes we are concerned with the geopotential height and altitude are within 0.5km of eachother
-        alts=list(info.variables["hgtprs"].data.flatten())+list(info.variables["hgtsfc"].data.flatten())
+        # at the altitudes we are concerned with the geopotential height and altitude are within 0.5km of eachother
+        alts = list(info.variables["hgtprs"].data.flatten()) + list(
+            info.variables["hgtsfc"].data.flatten()
+        )
 
-        return interp1d(alts,u_wind),interp1d(alts,v_wind)
+        return interp1d(alts, u_wind), interp1d(alts, v_wind)
 
     def __str__(self):
         print(type(self))
-        return "GFS forcast with resolution %s"%self.resolution
+        return "GFS forcast with resolution %s" % self.resolution
+
 
 def get_attributes(res, step):
     with open(config_file) as f:
@@ -366,8 +384,8 @@ if __name__ == "__main__":
     test = False
 
     f = Forcast("0p25", "1hr")
-    #print(f.search_names("geopotential"))
-    u,v=f.get_windprofile("20210226 17:00", "12.5", "6.3")
+    # print(f.search_names("geopotential"))
+    u, v = f.get_windprofile("20210226 17:00", "12.5", "6.3")
     print(u(1000))
     # print(f.value_to_index("lat", 0))
     if test == True:

@@ -73,10 +73,10 @@ class File:
             ind_head += lines_data + lines_meta + 2
 
         self.variables = {v.name: v for v in variables}
-    
+
     def __str__(self):
         print(type(self))
-        return "File containing %s"%self.variables.keys()
+        return "File containing %s" % self.variables.keys()
 
 
 def replace_val(arr, val, position):
