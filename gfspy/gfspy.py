@@ -53,15 +53,19 @@ class Forcast:
         self.timestep = timestep
         self.times, self.coords, self.variables = get_attributes(resolution, timestep)
 
-    def get(self, variables, date_time, lat, lon, alt=[]):
+    def get_raw(self, variables, date_time, lat, lon):
         """Returns the latest forcast available for the requested date and time
+
+        Note:
+        ----
+        - "raw" since you have to put indexes in rather than coordinates and it returns a file object rather than a processed file
+        - If a variable has level dependance, you get all the levels - it seems extremely hard to impliment otherwise
 
         Args:
             variables (list): list of required variables by short name
             date_time (string): datetime requested
             lat (string): latitude in the format "[min_index:max_index]"
             lon ([type]): longitude in the format "[min_index:max_index]"
-            z (list, optional): z level in the format "[min_index:max_index]". Defaults to [] meaning there is no level dependance.
         """
 
         # Get forcast date run, date, time
@@ -151,22 +155,15 @@ class Forcast:
                 % lon
             )
 
-        # Get lev 
-        if alt == []:
-            pass
-        else:
-            lev = "[0:%s]" % int(
-                (self.coords["lev"]["minimum"] - self.coords["lev"]["maximum"])
-                / self.coords["lev"]["resolution"]
-            )
-            #intention was to only download required data but not going to work because how do you do this in reverse
-            alt_press = self.get_alt_press(
-                forcast_date,
-                forcast_time,
-                query_time,
-                lat,
-                lon
-            )
+        # Get lev
+        lev = "[0:%s]" % int(
+            (self.coords["lev"]["minimum"] - self.coords["lev"]["maximum"])
+            / self.coords["lev"]["resolution"]
+        )
+        # intention was to only download required data but not going to work because how do you do this in reverse
+        #alt_press = self.get_alt_press(
+        #    forcast_date, forcast_time, query_time, lat, lon
+        #)
 
         # Make query
         query = ""
@@ -188,7 +185,36 @@ class Forcast:
             else:
                 query += "," + variable + query_time + lat + lon
 
-        
+        query = query[1:]
+
+        r = requests.get(
+            url.format(
+                res=self.resolution,
+                step=self.timestep,
+                date=forcast_date,
+                hour=int(forcast_time),
+                info="ascii?{query}".format(query=query),
+            )
+        )
+        if r.status_code != 200:
+            raise Exception(
+                """The altitude pressure forcast information could not be downloaded. 
+        This error should never occure but it may be helpful to know the requested information was:
+        - Forcast date: {f_date}
+        - Forcast time: {f_time}
+        - Query time: {q_time}
+        - Latitude: {lat}
+        - Longitude: {lon}""".format(
+                    f_date=forcast_date,
+                    f_time=forcast_time,
+                    q_time=query_time,
+                    lat=lat,
+                    lon=lon,
+                )
+            )
+
+        return File(r.text)
+
 
     def value_to_index(self, coord, value):
         possibles = [
@@ -204,7 +230,7 @@ class Forcast:
                 res=self.resolution,
                 step=self.timestep,
                 date=forcast_date,
-                hour=forcast_time,
+                hour=int(forcast_time),
                 info="ascii?hgtprs{query_time}[0:{max_lev}]{lat}{lon}".format(
                     query_time=query_time,
                     lat=lat,
@@ -365,10 +391,7 @@ if __name__ == "__main__":
     test = False
 
     f = Forcast("0p25", "1hr")
-    print(f.times)
-    conv = f.get_alt_press("20210220", 0, "[0]", "[0:1]", "[0:1]")
-    print(conv(np.array([0, -89.7, 0])))
-    # f.get(["dzdtprs"], "20210220 17:00", "0", "[1]", alt="all")
+    f.get(["dzdtprs"], "20210226 17:00", "0", "0", alt="all")
     # print(f.value_to_index("lat", 0))
     if test == True:
         os.remove(config_file)
