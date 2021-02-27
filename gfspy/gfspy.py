@@ -74,81 +74,13 @@ class Forcast:
         """
 
         # Get forcast date run, date, time
-        earliest_available = hour_round(datetime.utcnow() - timedelta(days=7))
-        latest_available = hour_round(
-            datetime.utcnow()
-            - timedelta(
-                hours=datetime.utcnow().hour
-                - 6 * (datetime.utcnow().hour // 6)
-                - int(self.times["grads_size"]) * int(self.times["grads_step"][0]),
-                minutes=datetime.utcnow().minute,
-                seconds=datetime.utcnow().second,
-                microseconds=datetime.utcnow().microsecond,
-            )
-        )
-        desired_date = dateutil.parser.parse(date_time)
-        latest_forcast = latest_available - timedelta(
-            hours=int(self.times["grads_size"]) * int(self.times["grads_step"][0])
-        )
-        if earliest_available < desired_date < latest_available:
-            query_forcast = latest_forcast
-            while desired_date < query_forcast:
-                query_forcast -= timedelta(hours=6)
-
-            forcast_date = query_forcast.strftime("%Y%m%d")
-            forcast_time = query_forcast.strftime("%H")
-
-            query_time = "[{t_ind}]".format(
-                t_ind=round(
-                    (desired_date - query_forcast).seconds
-                    / (int(self.times["grads_step"][0]) * 60 * 60)
-                )
-            )
-
-        else:
-            raise ValueError(
-                "Datetime requested ({dt}) is not available the moment, usually only the last weeks worth of forcasts are available and this model only extends {hours} hours forward.\nThis error may be caused by an uninterpretable datetime format.".format(
-                    hours=int(self.times["grads_size"])
-                    * int(self.times["grads_step"][0]),
-                    dt=dateutil.parser.parse(date_time),
-                )
-            )
+        forcast_date,forcast_time,query_time=self.datetime_to_forcast(date_time)
 
         # Get latitude
-        if isinstance(lat, str):
-            if lat[0] == "[" and lat[-1] == "]" and ":" in lat:
-                val_1 = float(re.findall(r"\[(.*?):", lat))
-                val_2 = float(re.findall(r"\:(.*?)]", lat))
-                val_min = self.value_to_index("lat", min(val_1, val_2))
-                val_max = self.value_to_index("lat", max(val_1, val_2))
-                lat = "[%s:%s]" % (val_min, val_max)
-            else:
-                try:
-                    lat=float(lat)#isnumeric apparently doesn't work for floats
-                except:
-                    raise ValueError(
-                        "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
-                        % lat
-                    )
-                lat = "[%s]" % self.value_to_index("lat", lat)
+        lat=self.value_input_to_index("lat",lat)
 
         # Get longitude
-        if isinstance(lon, str):
-            if lon[0] == "[" and lon[-1] == "]" and ":" in lon:
-                val_1 = float(re.findall(r"\[(.*?):", lon))
-                val_2 = float(re.findall(r"\:(.*?)]", lon))
-                val_min = self.value_to_index("lon", min(val_1, val_2))
-                val_max = self.value_to_index("lon", max(val_1, val_2))
-                lon = "[%s:%s]" % (val_min, val_max)
-            else:
-                try:
-                    lon=float(lon)#isnumeric apparently doesn't work for floats
-                except:
-                    raise ValueError(
-                        "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
-                        % lon
-                    )
-                lon = "[%s]" % self.value_to_index("lon", lon)
+        lon=self.value_input_to_index("lon",lon)
 
         # Get lev
         lev = "[0:%s]" % int(
@@ -206,6 +138,72 @@ class Forcast:
 
         return File(r.text)
 
+    def datetime_to_forcast(self,date_time):
+        earliest_available = hour_round(datetime.utcnow() - timedelta(days=7))
+        latest_available = hour_round(
+            datetime.utcnow()
+            - timedelta(
+                hours=datetime.utcnow().hour
+                - 6 * (datetime.utcnow().hour // 6)
+                - int(self.times["grads_size"]) * int(self.times["grads_step"][0]),
+                minutes=datetime.utcnow().minute,
+                seconds=datetime.utcnow().second,
+                microseconds=datetime.utcnow().microsecond,
+            )
+        )
+        desired_date = dateutil.parser.parse(date_time)
+        latest_forcast = latest_available - timedelta(
+            hours=int(self.times["grads_size"]) * int(self.times["grads_step"][0])
+        )
+        if earliest_available < desired_date < latest_available:
+            query_forcast = latest_forcast
+            while desired_date < query_forcast:
+                query_forcast -= timedelta(hours=6)
+
+            forcast_date = query_forcast.strftime("%Y%m%d")
+            forcast_time = query_forcast.strftime("%H")
+
+            query_time = "[{t_ind}]".format(
+                t_ind=round(
+                    (desired_date - query_forcast).seconds
+                    / (int(self.times["grads_step"][0]) * 60 * 60)
+                )
+            )
+
+        else:
+            raise ValueError(
+                "Datetime requested ({dt}) is not available the moment, usually only the last weeks worth of forcasts are available and this model only extends {hours} hours forward.\nThis error may be caused by an uninterpretable datetime format.".format(
+                    hours=int(self.times["grads_size"])
+                    * int(self.times["grads_step"][0]),
+                    dt=dateutil.parser.parse(date_time),
+                )
+            )
+        
+        return forcast_date,forcast_time,query_time
+
+    def value_input_to_index(self,coord,inpt):
+        if isinstance(inpt, str):
+            if inpt[0] == "[" and inpt[-1] == "]" and ":" in inpt:
+                val_1 = float(re.findall(r"\[(.*?):", inpt))
+                val_2 = float(re.findall(r"\:(.*?)]", inpt))
+                val_min = self.value_to_index(coord, min(val_1, val_2))
+                val_max = self.value_to_index(coord, max(val_1, val_2))
+                ind = "[%s:%s]" % (val_min, val_max)
+            else:
+                try:
+                    inpt=float(inpt)#isnumeric apparently doesn't work for floats
+                except:
+                    raise ValueError(
+                        "The format of the %s variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                        % (coord, inpt)
+                    )
+                ind = "[%s]" % self.value_to_index(coord, inpt)
+        else:
+            ind = "[%s]" % self.value_to_index(coord, inpt)
+        
+        return ind
+
+
     def value_to_index(self, coord, value):
         possibles = [
             float(self.coords[coord]["resolution"]) * n
@@ -214,55 +212,6 @@ class Forcast:
         ]
         closest=min(possibles, key=lambda x:abs(x-value))
         return possibles.index(closest)
-
-    def get_alt_lev(self, forcast_date, forcast_time, query_time, lat, lon):
-        r = requests.get(
-            url.format(
-                res=self.resolution,
-                step=self.timestep,
-                date=forcast_date,
-                hour=int(forcast_time),
-                info="ascii?hgtprs{query_time}[0:{max_lev}]{lat}{lon}".format(
-                    query_time=query_time,
-                    lat=lat,
-                    lon=lon,
-                    max_lev=int(
-                        (self.coords["lev"]["minimum"] - self.coords["lev"]["maximum"])
-                        / self.coords["lev"]["resolution"]
-                    ),
-                ),
-            )
-        )
-        if r.status_code != 200:
-            raise Exception(
-                """The altitude pressure forcast information could not be downloaded. 
-        This error should never occure but it may be helpful to know the requested information was:
-        - Forcast date: {f_date}
-        - Forcast time: {f_time}
-        - Query time: {q_time}
-        - Latitude: {lat}
-        - Longitude: {lon}""".format(
-                    f_date=forcast_date,
-                    f_time=forcast_time,
-                    q_time=query_time,
-                    lat=lat,
-                    lon=lon,
-                )
-            )
-        decoded_data = File(r.text)
-
-        height = decoded_data.variables["hgtprs"].data
-
-        times = decoded_data.variables["hgtprs"].coords["time"].values
-        levs = decoded_data.variables["hgtprs"].coords["lev"].values
-        lats = decoded_data.variables["hgtprs"].coords["lat"].values
-        lons = decoded_data.variables["hgtprs"].coords["lon"].values
-
-        if len(lats)>1 or len(lons)>1 or len(times)>1:
-            raise RuntimeError("""Multi dimensional altitude-level conversion is not currently available. 
-        If you know how to invert a multidimensional interpolation you are welcome to fix this""")
-
-        return interp1d(height,levs)
 
     def search_names(self,variable,sensetivity=80):
         if 'fuzzywuzzy.fuzz' not in sys.modules:
@@ -279,6 +228,17 @@ class Forcast:
         possibles=sorted(possibles, key=lambda tup: tup[2])
         return possibles
 
+    def get_windprofile(self, date_time, lat, lon):
+        info=self.get(["ugrdprs","vgrdprs","ugrd2pv","vgrd2pv","hgtsfc","hgtprs"],date_time,lat,lon)
+        
+
+        u_wind=list(info.variables["ugrdprs"].data.flatten())+list(info.variables["ugrd2pv"].data.flatten())
+        v_wind=list(info.variables["vgrdprs"].data.flatten())+list(info.variables["vgrd2pv"].data.flatten())
+
+        #at the altitudes we are concerned with the geopotential height and altitude are within 0.5km of eachother
+        alts=list(info.variables["hgtprs"].data.flatten())+list(info.variables["hgtsfc"].data.flatten())
+
+        return interp1d(alts,u_wind),interp1d(alts,v_wind)
 
 def get_attributes(res, step):
     with open(config_file) as f:
@@ -390,8 +350,9 @@ if __name__ == "__main__":
     test = False
 
     f = Forcast("0p25", "1hr")
-    print(f.search_names("surface height"))
-    #print(f.get(["dzdtprs"], "20210226 17:00", "12.5", "6.3").variables)
+    #print(f.search_names("geopotential"))
+    u,v=f.get_windprofile("20210226 17:00", "12.5", "6.3")
+    print(u(1000))
     # print(f.value_to_index("lat", 0))
     if test == True:
         os.remove(config_file)
