@@ -5,11 +5,15 @@ TODO
 - Could add historic fetching from https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files-old/202003/20200328/gfs_4_20200328_1800_384.grb2.das
     - Possibly beneficial for historical analysis since it should mean you don't have to download the whole shibang
 - Add export to .nc file with netcdf4 (maybe an optional dependancy)
+- Add shortcuts like wind, alts="all" would also include the surface wind component (since min alt wind is ~40m)
+- Add purge missing/unreliable
 """
 import requests, json, os, re, dateutil.parser
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
+from decode import *
 
 __copyright__ = """
     gfspy - A library that extracts information from the NOAA GFS forecast without using .grb2 files
@@ -42,14 +46,14 @@ if not os.path.isfile(config_file):
 
 
 class Forcast:
-    def __init__(self, resolution, timestep=""):
+    def __init__(self, resolution="0p25", timestep=""):
         if timestep != "":
             timestep = "_" + timestep
         self.resolution = resolution
         self.timestep = timestep
         self.times, self.coords, self.variables = get_attributes(resolution, timestep)
 
-    def get(self, variables, date_time, lat, lon, lev=[]):
+    def get(self, variables, date_time, lat, lon, alt=[]):
         """Returns the latest forcast available for the requested date and time
 
         Args:
@@ -60,17 +64,7 @@ class Forcast:
             z (list, optional): z level in the format "[min_index:max_index]". Defaults to [] meaning there is no level dependance.
         """
 
-        if isinstance(lat,str):
-            if lat[0]=="[" and lat[-1]=="]" and ":" in lat:
-                #Extract 2 values
-                #see which is bigger and smaller
-                #convert to [:] format
-            elif lat.isnumeric():
-                lat="[%s]"%self.value_to_index("lat",float(lat))
-            else:
-                raise ValueError("The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"%lat)
-
-
+        # Get forcast date run, date, time
         earliest_available = hour_round(datetime.utcnow() - timedelta(days=7))
         latest_available = hour_round(
             datetime.utcnow()
@@ -93,7 +87,7 @@ class Forcast:
                 query_forcast -= timedelta(hours=6)
 
             forcast_date = query_forcast.strftime("%Y%m%d")
-            forcast_time = query_forcast.strftime("_%Hz")
+            forcast_time = query_forcast.strftime("%H")
 
             query_time = "[{t_ind}]".format(
                 t_ind=round(
@@ -101,25 +95,6 @@ class Forcast:
                     / (int(self.times["grads_step"][0]) * 60 * 60)
                 )
             )
-            query = ""
-            for variable in variables:
-                if variable not in self.variables.keys():
-                    raise ValueError(
-                        "The variable {name} is not a valid choice for this weather model".format(
-                            name=variable
-                        )
-                    )
-                if self.variables[variable]["level_dependent"] == True and lev == []:
-                    raise ValueError(
-                        "The variable {name} requires the altitude/level to be defined".format(
-                            name=variable
-                        )
-                    )
-                elif self.variables[variable]["level_dependent"] == True:
-                    query += "," + variable + query_time + lev + lat + lon
-                else:
-                    query += "," + variable + query_time + lat + lon
-            print(query)
 
         else:
             raise ValueError(
@@ -130,6 +105,91 @@ class Forcast:
                 )
             )
 
+        # Get latitude
+        if isinstance(lat, str):
+            if lat[0] == "[" and lat[-1] == "]" and ":" in lat:
+                val_1 = float(re.findall(r"\[(.*?):", lat))
+                val_2 = float(re.findall(r"\:(.*?)]", lat))
+                val_min = self.value_to_index("lat", min(val_1, val_2))
+                val_max = self.value_to_index("lat", max(val_1, val_2))
+                lat = "[%s:%s]" % (val_min, val_max)
+            elif lat.isnumeric():
+                lat = "[%s]" % self.value_to_index("lat", float(lat))
+            else:
+                raise ValueError(
+                    "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                    % lat
+                )
+        elif isinstance(lat, float) or isinstance(lat, int):
+            pass
+        else:
+            raise ValueError(
+                "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                % lat
+            )
+
+        # Get longitude
+        if isinstance(lon, str):
+            if lon[0] == "[" and lon[-1] == "]" and ":" in lon:
+                val_1 = float(re.findall(r"\[(.*?):", lon))
+                val_2 = float(re.findall(r"\:(.*?)]", lon))
+                val_min = self.value_to_index("lon", min(val_1, val_2))
+                val_max = self.value_to_index("lon", max(val_1, val_2))
+                lon = "[%s:%s]" % (val_min, val_max)
+            elif lon.isnumeric():
+                lon = "[%s]" % self.value_to_index("lon", float(lon))
+            else:
+                raise ValueError(
+                    "The format of the longitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                    % lon
+                )
+        elif isinstance(lon, float) or isinstance(lon, int):
+            pass
+        else:
+            raise ValueError(
+                "The format of the longitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                % lon
+            )
+
+        # Get lev 
+        if alt == []:
+            pass
+        else:
+            lev = "[0:%s]" % int(
+                (self.coords["lev"]["minimum"] - self.coords["lev"]["maximum"])
+                / self.coords["lev"]["resolution"]
+            )
+            #intention was to only download required data but not going to work because how do you do this in reverse
+            alt_press = self.get_alt_press(
+                forcast_date,
+                forcast_time,
+                query_time,
+                lat,
+                lon
+            )
+
+        # Make query
+        query = ""
+        for variable in variables:
+            if variable not in self.variables.keys():
+                raise ValueError(
+                    "The variable {name} is not a valid choice for this weather model".format(
+                        name=variable
+                    )
+                )
+            if self.variables[variable]["level_dependent"] == True and lev == []:
+                raise ValueError(
+                    "The variable {name} requires the altitude/level to be defined".format(
+                        name=variable
+                    )
+                )
+            elif self.variables[variable]["level_dependent"] == True:
+                query += "," + variable + query_time + lev + lat + lon
+            else:
+                query += "," + variable + query_time + lat + lon
+
+        
+
     def value_to_index(self, coord, value):
         possibles = [
             float(self.coords[coord]["resolution"]) * n
@@ -137,6 +197,62 @@ class Forcast:
             for n in range(0, int(self.coords[coord]["grads_size"]))
         ]
         return possibles.index(value)
+
+    def get_alt_press(self, forcast_date, forcast_time, query_time, lat, lon):
+        r = requests.get(
+            url.format(
+                res=self.resolution,
+                step=self.timestep,
+                date=forcast_date,
+                hour=forcast_time,
+                info="ascii?hgtprs{query_time}[0:{max_lev}]{lat}{lon}".format(
+                    query_time=query_time,
+                    lat=lat,
+                    lon=lon,
+                    max_lev=int(
+                        (self.coords["lev"]["minimum"] - self.coords["lev"]["maximum"])
+                        / self.coords["lev"]["resolution"]
+                    ),
+                ),
+            )
+        )
+        if r.status_code != 200:
+            raise Exception(
+                """The altitude pressure forcast information could not be downloaded. 
+        This error should never occure but it may be helpful to know the requested information was:
+        - Forcast date: {f_date}
+        - Forcast time: {f_time}
+        - Query time: {q_time}
+        - Latitude: {lat}
+        - Longitude: {lon}""".format(
+                    f_date=forcast_date,
+                    f_time=forcast_time,
+                    q_time=query_time,
+                    lat=lat,
+                    lon=lon,
+                )
+            )
+        decoded_data = File(r.text)
+
+        height = decoded_data.variables["hgtprs"].data
+
+        times = decoded_data.variables["hgtprs"].coords["time"].values
+        # unfortunatly the inputs must be ascending so lev pressure being backwards is a pain - must remember to query 1000-x for x lev
+        levs = [1000 - v for v in decoded_data.variables["hgtprs"].coords["lev"].values]
+        lats = decoded_data.variables["hgtprs"].coords["lat"].values
+        lons = decoded_data.variables["hgtprs"].coords["lon"].values
+
+        input_dims = ()
+        for var in [times, levs, lats, lons]:
+            if len(var) > 1:
+                input_dims = input_dims + (var,)
+            else:
+                height = height.squeeze()
+
+        return RegularGridInterpolator(input_dims, height)
+
+    def alt_to_lev(self, alt, conversion_interp):
+        pass
 
 
 def get_attributes(res, step):
@@ -247,10 +363,13 @@ def hour_round(t):
 
 if __name__ == "__main__":
     test = False
+
     f = Forcast("0p25", "1hr")
     print(f.times)
-    f.get(["dzdtprs"], "20210220 17:00", "0", "[1]", lev="[1]")
-    print(f.value_to_index("lat", 0))
+    conv = f.get_alt_press("20210220", 0, "[0]", "[0:1]", "[0:1]")
+    print(conv(np.array([0, -89.7, 0])))
+    # f.get(["dzdtprs"], "20210220 17:00", "0", "[1]", alt="all")
+    # print(f.value_to_index("lat", 0))
     if test == True:
         os.remove(config_file)
         import shutil
