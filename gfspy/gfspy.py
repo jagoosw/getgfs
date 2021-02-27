@@ -8,12 +8,17 @@ TODO
 - Add shortcuts like wind, alts="all" would also include the surface wind component (since min alt wind is ~40m)
 - Add purge missing/unreliable
 """
-import requests, json, os, re, dateutil.parser
+import requests, json, os, re, dateutil.parser, sys
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 from decode import *
+
+try:
+    from fuzzywuzzy import fuzz
+except:
+    pass
 
 __copyright__ = """
     gfspy - A library that extracts information from the NOAA GFS forecast without using .grb2 files
@@ -53,7 +58,7 @@ class Forcast:
         self.timestep = timestep
         self.times, self.coords, self.variables = get_attributes(resolution, timestep)
 
-    def get_raw(self, variables, date_time, lat, lon):
+    def get(self, variables, date_time, lat, lon):
         """Returns the latest forcast available for the requested date and time
 
         Note:
@@ -64,8 +69,8 @@ class Forcast:
         Args:
             variables (list): list of required variables by short name
             date_time (string): datetime requested
-            lat (string): latitude in the format "[min_index:max_index]"
-            lon ([type]): longitude in the format "[min_index:max_index]"
+            lat (string or number): latitude in the format "[min:max]" or a single value
+            lon (string or number): longitude in the format "[min:max]" or a single value
         """
 
         # Get forcast date run, date, time
@@ -117,20 +122,15 @@ class Forcast:
                 val_min = self.value_to_index("lat", min(val_1, val_2))
                 val_max = self.value_to_index("lat", max(val_1, val_2))
                 lat = "[%s:%s]" % (val_min, val_max)
-            elif lat.isnumeric():
-                lat = "[%s]" % self.value_to_index("lat", float(lat))
             else:
-                raise ValueError(
-                    "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
-                    % lat
-                )
-        elif isinstance(lat, float) or isinstance(lat, int):
-            pass
-        else:
-            raise ValueError(
-                "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
-                % lat
-            )
+                try:
+                    lat=float(lat)#isnumeric apparently doesn't work for floats
+                except:
+                    raise ValueError(
+                        "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                        % lat
+                    )
+                lat = "[%s]" % self.value_to_index("lat", lat)
 
         # Get longitude
         if isinstance(lon, str):
@@ -140,30 +140,21 @@ class Forcast:
                 val_min = self.value_to_index("lon", min(val_1, val_2))
                 val_max = self.value_to_index("lon", max(val_1, val_2))
                 lon = "[%s:%s]" % (val_min, val_max)
-            elif lon.isnumeric():
-                lon = "[%s]" % self.value_to_index("lon", float(lon))
             else:
-                raise ValueError(
-                    "The format of the longitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
-                    % lon
-                )
-        elif isinstance(lon, float) or isinstance(lon, int):
-            pass
-        else:
-            raise ValueError(
-                "The format of the longitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
-                % lon
-            )
+                try:
+                    lon=float(lon)#isnumeric apparently doesn't work for floats
+                except:
+                    raise ValueError(
+                        "The format of the latitude variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
+                        % lon
+                    )
+                lon = "[%s]" % self.value_to_index("lon", lon)
 
         # Get lev
         lev = "[0:%s]" % int(
             (self.coords["lev"]["minimum"] - self.coords["lev"]["maximum"])
             / self.coords["lev"]["resolution"]
         )
-        # intention was to only download required data but not going to work because how do you do this in reverse
-        #alt_press = self.get_alt_press(
-        #    forcast_date, forcast_time, query_time, lat, lon
-        #)
 
         # Make query
         query = ""
@@ -215,16 +206,16 @@ class Forcast:
 
         return File(r.text)
 
-
     def value_to_index(self, coord, value):
         possibles = [
             float(self.coords[coord]["resolution"]) * n
             + float(self.coords[coord]["minimum"])
             for n in range(0, int(self.coords[coord]["grads_size"]))
         ]
-        return possibles.index(value)
+        closest=min(possibles, key=lambda x:abs(x-value))
+        return possibles.index(closest)
 
-    def get_alt_press(self, forcast_date, forcast_time, query_time, lat, lon):
+    def get_alt_lev(self, forcast_date, forcast_time, query_time, lat, lon):
         r = requests.get(
             url.format(
                 res=self.resolution,
@@ -263,22 +254,30 @@ class Forcast:
         height = decoded_data.variables["hgtprs"].data
 
         times = decoded_data.variables["hgtprs"].coords["time"].values
-        # unfortunatly the inputs must be ascending so lev pressure being backwards is a pain - must remember to query 1000-x for x lev
-        levs = [1000 - v for v in decoded_data.variables["hgtprs"].coords["lev"].values]
+        levs = decoded_data.variables["hgtprs"].coords["lev"].values
         lats = decoded_data.variables["hgtprs"].coords["lat"].values
         lons = decoded_data.variables["hgtprs"].coords["lon"].values
 
-        input_dims = ()
-        for var in [times, levs, lats, lons]:
-            if len(var) > 1:
-                input_dims = input_dims + (var,)
-            else:
-                height = height.squeeze()
+        if len(lats)>1 or len(lons)>1 or len(times)>1:
+            raise RuntimeError("""Multi dimensional altitude-level conversion is not currently available. 
+        If you know how to invert a multidimensional interpolation you are welcome to fix this""")
 
-        return RegularGridInterpolator(input_dims, height)
+        return interp1d(height,levs)
 
-    def alt_to_lev(self, alt, conversion_interp):
-        pass
+    def search_names(self,variable,sensetivity=80):
+        if 'fuzzywuzzy.fuzz' not in sys.modules:
+            raise RuntimeError("You can not use search_name without fuzzywuzzy installed, please `pip install fuzzywuzzy`. Other functionality is still available")
+
+        possibles=[]
+        for var in self.variables.keys():
+            if "long_name" in self.variables[var].keys():
+                ln=fuzz.partial_ratio(self.variables[var]["long_name"],variable)
+                sn=fuzz.partial_ratio(var,variable)
+                if ln>sensetivity or sn>sensetivity:
+                    possibles.append((var,self.variables[var]["long_name"],ln+sn))
+
+        possibles=sorted(possibles, key=lambda tup: tup[2])
+        return possibles
 
 
 def get_attributes(res, step):
@@ -391,7 +390,8 @@ if __name__ == "__main__":
     test = False
 
     f = Forcast("0p25", "1hr")
-    f.get(["dzdtprs"], "20210226 17:00", "0", "0", alt="all")
+    print(f.search_names("surface height"))
+    #print(f.get(["dzdtprs"], "20210226 17:00", "12.5", "6.3").variables)
     # print(f.value_to_index("lat", 0))
     if test == True:
         os.remove(config_file)

@@ -4,4 +4,4 @@ gfspy will be a Python library that extracts information from the NOAA GFS forec
 Previous Python projects that attempted this do not fulfil all the requirements, mainly being an importable library. Acknowledgment must be made to [albertotb](https://github.com/albertotb)'s project [get-gfs](https://github.com/albertotb/get-gfs) for providing the first foothold along the way.
 
 ## Current status
-The only current functionality is getting and processing the variables stored in any of the forecasts from the `das` and `dds` elements.
+Weather forecast variables can now easily be found but with limited output niceness
