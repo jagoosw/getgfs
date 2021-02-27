@@ -5,7 +5,6 @@ TODO
 - Could add historic fetching from https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files-old/202003/20200328/gfs_4_20200328_1800_384.grb2.das
     - Possibly beneficial for historical analysis since it should mean you don't have to download the whole shibang
 - Add export to .nc file with netcdf4 (maybe an optional dependancy)
-- Add shortcuts like wind, alts="all" would also include the surface wind component (since min alt wind is ~40m)
 - Add purge missing/unreliable
 """
 import requests, json, os, re, dateutil.parser, sys
@@ -51,9 +50,22 @@ if not os.path.isfile(config_file):
 
 
 class Forcast:
+    """Object that can be manipulated to get forcast information
+    """    
     def __init__(self, resolution="0p25", timestep=""):
+        """Setting up the forcast object by specifying the forcast type
+
+        Args:
+            resolution (str, optional): The forcast resulution, choices are 1p00, 0p50 and 0p25. Defaults to "0p25".
+            timestep (str, optional): The timestep of the forcast to use, most do not have a choice but 0p25 can be 3hr (default) or 1hr. Defaults to "".
+        """        
         if timestep != "":
             timestep = "_" + timestep
+
+        if resolution not in ["1p00","0p50","0p25"]:
+            raise ValueError("You have entered an invalid forcast resulution, the choices are 1p00, 0p50 and 0p25. You entered %s"%resolution)
+        if timestep!="" or (timestep=="_1hr" and resolution=="0p25"):
+            raise ValueError("You have entered an invalid forcast timestep, the only choice is 1hr for 0p25 forcasts or the default. You entered %s"%timestep)
         self.resolution = resolution
         self.timestep = timestep
         self.times, self.coords, self.variables = get_attributes(resolution, timestep)
@@ -239,6 +251,10 @@ class Forcast:
         alts=list(info.variables["hgtprs"].data.flatten())+list(info.variables["hgtsfc"].data.flatten())
 
         return interp1d(alts,u_wind),interp1d(alts,v_wind)
+
+    def __str__(self):
+        print(type(self))
+        return "GFS forcast with resolution %s"%self.resolution
 
 def get_attributes(res, step):
     with open(config_file) as f:
