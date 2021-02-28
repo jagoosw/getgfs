@@ -1,0 +1,6 @@
+scipy
+requests
+fuzzywuzzy
+numpy
+python_dateutil
+regex

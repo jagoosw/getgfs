@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Welcome to getgfs &mdash; getgfs 1.0.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="getgfs package" href="getgfs.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> getgfs
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getgfs.html">getgfs package</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">getgfs</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Welcome to getgfs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-getgfs">
+<h1>Welcome to getgfs<a class="headerlink" href="#welcome-to-getgfs" title="Permalink to this headline">¶</a></h1>
+<p>getgfs extracts weather forecast variables from the NOAA GFS forecast in a pure python, no obscure dependencies way. Currently you can:</p>
+<ul class="simple">
+<li><p>“Connect” to a forecast</p></li>
+<li><p>Search the variables</p></li>
+<li><p>Download variables for any time range, longitude, latitude and altitude</p></li>
+<li><p>Download “wind profiles” where you get an interpolation object for the u and v wind components by altitude</p></li>
+</ul>
+</div>
+<div class="section" id="installing">
+<h1>Installing<a class="headerlink" href="#installing" title="Permalink to this headline">¶</a></h1>
+<p>Installation is simple with PyPi:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`pip</span> <span class="pre">install</span> <span class="pre">getgfs`</span></code></p>
+</div>
+<div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>The library is straight forward to use. To get started create a Forecast object by:</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="go">&gt;&gt;&gt;import getgfs</span>
+<span class="go">&gt;&gt;&gt;f=getgfs.Forecast(&quot;0p25&quot;)</span>
+</pre></div>
+</td></tr></table></div>
+<p>You can chose the resolution to be <cite>0p25</cite>, <cite>0p50</cite> or <cite>1p00</cite> and for the <cite>0p25</cite> forecast you can optional specify a shorter timestep by adding <cite>1hr</cite> after.</p>
+<p>First to find what variable you are looking for use the search function, for example if I want the wind speed I could search for “wind”:</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="go">&gt;&gt;&gt;f.search(&quot;wind&quot;)</span>
+<span class="go">[(&#39;gustsfc&#39;, &#39;** surface wind speed (gust) [m/s] &#39;, 100), (&#39;ugrdprs&#39;, &#39;** (1000 975 950 925 900.. 7 5 3 2 1) u-component of wind [m/s] &#39;, 125), (&#39;ugrd_1829m&#39;, &#39;** 1829 m above mean sea level u-component of wind [m/s] &#39;, 125), (&#39;ugrd_2743m&#39;, &#39;** 2743 m above mean sea level u-component of wind [m/s] &#39;, 125), (&#39;ugrd_3658m&#39;, &#39;** 3658 m above mean sea level u-component of wind [m/s] &#39;, 125), (&#39;ugrd10m&#39;, &#39;** 10 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd20m&#39;, &#39;** 20 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd30m&#39;, &#39;** 30 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd40m&#39;, &#39;** 40 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd50m&#39;, &#39;** 50 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd80m&#39;, &#39;** 80 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd100m&#39;, &#39;** 100 m above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrdsig995&#39;, &#39;** 0.995 sigma level u-component of wind [m/s] &#39;, 125), (&#39;ugrd30_0mb&#39;, &#39;** 30-0 mb above ground u-component of wind [m/s] &#39;, 125), (&#39;ugrd2pv&#39;, &#39;** pv=2e-06 (km^2/kg/s) surface u-component of wind [m/s] &#39;, 125), (&#39;ugrdneg2pv&#39;, &#39;** pv=-2e-06 (km^2/kg/s) surface u-component of wind [m/s] &#39;, 125), (&#39;ugrdpbl&#39;, &#39;** planetary boundary layer u-component of wind [m/s] &#39;, 125), (&#39;ugrdtrop&#39;, &#39;** tropopause u-component of wind [m/s] &#39;, 125), (&#39;vgrdprs&#39;, &#39;** (1000 975 950 925 900.. 7 5 3 2 1) v-component of wind [m/s] &#39;, 125), (&#39;vgrd_1829m&#39;, &#39;** 1829 m above mean sea level v-component of wind [m/s] &#39;, 125), (&#39;vgrd_2743m&#39;, &#39;** 2743 m above mean sea level v-component of wind [m/s] &#39;, 125), (&#39;vgrd_3658m&#39;, &#39;** 3658 m above mean sea level v-component of wind [m/s] &#39;, 125), (&#39;vgrd10m&#39;, &#39;** 10 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd20m&#39;, &#39;** 20 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd30m&#39;, &#39;** 30 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd40m&#39;, &#39;** 40 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd50m&#39;, &#39;** 50 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd80m&#39;, &#39;** 80 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd100m&#39;, &#39;** 100 m above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrdsig995&#39;, &#39;** 0.995 sigma level v-component of wind [m/s] &#39;, 125), (&#39;vgrd30_0mb&#39;, &#39;** 30-0 mb above ground v-component of wind [m/s] &#39;, 125), (&#39;vgrd2pv&#39;, &#39;** pv=2e-06 (km^2/kg/s) surface v-component of wind [m/s] &#39;, 125), (&#39;vgrdneg2pv&#39;, &#39;** pv=-2e-06 (km^2/kg/s) surface v-component of wind [m/s] &#39;, 125), (&#39;vgrdpbl&#39;, &#39;** planetary boundary layer v-component of wind [m/s] &#39;, 125), (&#39;vgrdtrop&#39;, &#39;** tropopause v-component of wind [m/s] &#39;, 125), (&#39;hgtmwl&#39;, &#39;** max wind geopotential height [gpm] &#39;, 133), (&#39;icahtmwl&#39;, &#39;** max wind icao standard atmosphere reference height [m] &#39;, 133), (&#39;presmwl&#39;, &#39;** max wind pressure [pa] &#39;, 133), (&#39;tmpmwl&#39;, &#39;** max wind temperature [k] &#39;, 133), (&#39;ugrdmwl&#39;, &#39;** max wind u-component of wind [m/s] &#39;, 133), (&#39;vgrdmwl&#39;, &#39;** max wind v-component of wind [m/s] &#39;, 133)]</span>
+</pre></div>
+</td></tr></table></div>
+<p>So now I can see I might want “gustsfc”. Now if I want the wind speed at N70.1 W94.7 at 5:30 on the 27th of Febuary (only forecasts going back around a week are available and furutre times available depend on the forecast - look for f.times) I could do:</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="go">&gt;&gt;&gt;res=f.get([&quot;gustsfc&quot;],&quot;20210227 5:30&quot;, 70.1,-94.7)</span>
+<span class="go">&gt;&gt;&gt;res.variables[&quot;gustsfc&quot;].data</span>
+<span class="go">array([[[18.808477]]])</span>
+</pre></div>
+</td></tr></table></div>
+<p>You can get more information (e.g. what is the units of this) by exploring the variables information</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="go">&gt;&gt;&gt;f.variables[&quot;gustsfc&quot;]</span>
+<span class="go">{&#39;_FillValue&#39;: 9.999e+20, &#39;missing_value&#39;: 9.999e+20, &#39;long_name&#39;: &#39;** surface wind speed (gust) [m/s] &#39;, &#39;level_dependent&#39;: False}</span>
+</pre></div>
+</td></tr></table></div>
+<p>You can also get multiple variables by including more names in the list or a range of positions by using “’[min_lat:max_lat]’” type strings in place of the position parameters.</p>
+</div>
+<div class="section" id="about">
+<h1>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h1>
+<p>The incentive to write this library was that the current method to get any variable was to download and extract information from a grib file. This requires you to use the ECMWF’s <cite>ecCodes</cite> which <a class="reference external" href="https://github.com/ecmwf/eccodes-python#system-dependencies">doesn’t work on Windows</a>. To get around this the <a class="reference external" href="https://nomads.ncep.noaa.gov/">OpenDAP</a> version of the forecast is used and a custom decoder reads the downloaded files.</p>
+<p>Previous Python projects that attempted this do not fulfil all the requirements, mainly being an importable library. Acknowledgment must be made to <a class="reference external" href="https://github.com/albertotb">albertotb</a>’s project <a class="reference external" href="https://github.com/albertotb/get-gfs">get-gfs</a> for providing the first foothold along the way.</p>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>The required libraries (installed by PyPi) are:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`scipy,</span> <span class="pre">requests,</span> <span class="pre">fuzzywuzzy,</span> <span class="pre">numpy,</span> <span class="pre">python_dateutil,</span> <span class="pre">regex`</span></code></p>
+<p>I have tried to ensure that these are well maintained and work across platforms (as this was the motive for writing this library).</p>
+</div>
+</div>
+<div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<p>Please see <a class="reference external" href="https://github.com/jagoosw/getgfs/blob/main/CONTRIBUTING.md">contributing</a> for more information.</p>
+<div class="section" id="todo">
+<h2>Todo<a class="headerlink" href="#todo" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Add historical forecasts from <a class="reference external" href="https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files-old/202003/20200328/gfs_4_20200328_1800_384.grb2.das">https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files-old/202003/20200328/gfs_4_20200328_1800_384.grb2.das</a></p></li>
+<li><p>Add export to .nc file with netcdf4 (maybe an optional dependency)</p></li>
+<li><p>Add purge missing/unreliable (missing/unreliable fill values are provided but have to iterate through data to check probably)</p></li>
+</ul>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getgfs.html">getgfs package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getgfs.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getgfs.html#module-getgfs.decode">getgfs.decode module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getgfs.html#module-getgfs.getgfs">getgfs.getgfs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getgfs.html#module-getgfs.test">getgfs.test module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getgfs.html#module-getgfs">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="getgfs.html" class="btn btn-neutral float-right" title="getgfs package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Jago Strong-Wright.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

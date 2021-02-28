@@ -1,0 +1,37 @@
+gfspy package
+=============
+
+Submodules
+----------
+
+gfspy.decode module
+-------------------
+
+.. automodule:: gfspy.decode
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+gfspy.gfspy module
+------------------
+
+.. automodule:: gfspy.gfspy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+gfspy.test module
+-----------------
+
+.. automodule:: gfspy.test
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: gfspy
+   :members:
+   :undoc-members:
+   :show-inheritance:

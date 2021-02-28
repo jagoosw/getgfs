@@ -1,18 +1,10 @@
-"""gfspy - A library that extracts information from the NOAA GFS forecast without using .grb2 files
-
-TODO
-----
-- Could add historic fetching from https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-004-files-old/202003/20200328/gfs_4_20200328_1800_384.grb2.das
-    - Possibly beneficial for historical analysis since it should mean you don't have to download the whole shibang
-- Add export to .nc file with netcdf4 (maybe an optional dependancy)
-- Add purge missing/unreliable
+"""gfspy - a library for extracting weather forecast variables from the NOAA GFS forecast in a pure python, no obscure dependencies way
 """
 import requests, json, os, re, dateutil.parser, sys
 from datetime import datetime, timedelta
-import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
-from decode import *
+from .decode import *
 
 try:
     from fuzzywuzzy import fuzz
@@ -67,7 +59,7 @@ class Forcast:
                 "You have entered an invalid forcast resulution, the choices are 1p00, 0p50 and 0p25. You entered %s"
                 % resolution
             )
-        if timestep != "" or (timestep == "_1hr" and resolution == "0p25"):
+        if (timestep != "" and resolution != "0p25") or (timestep not in ["_1hr",""] and resolution == "0p25"):
             raise ValueError(
                 "You have entered an invalid forcast timestep, the only choice is 1hr for 0p25 forcasts or the default. You entered %s"
                 % timestep

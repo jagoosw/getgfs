@@ -1,11 +1,11 @@
 import unittest
-from gfspy import *
-from decode import *
+from .getgfs import *
+from .decode import *
 
 # Seems like these aren't actually working
 
 __copyright__ = """
-    gfspy - A library that extracts information from the NOAA GFS forecast without using .grb2 files
+    getgfs - A library that extracts information from the NOAA GFS forecast without using .grb2 files
     Copyright (C) 2021 Jago Strong-Wright
 
     This program is free software: you can redistribute it and/or modify
@@ -107,17 +107,17 @@ lat, [1]
 lon, [1]
 0.0"""
 
+example = File(example_file)
+
 
 class TestBasics(unittest.TestCase):
     def test_attribute(self):
         self.assertEqual(
-            Forcast("0p25").times, {"grads_size": "81", "grads_step": "3hr"}
+            Forecast("0p25").times, {"grads_size": "81", "grads_step": "3hr"}
         )
 
-    def check_folders(self):
-        if not os.path.isdir("%s/atts" % gfspy.route) and not os.path.isfile(
-            gfspy.config_file
-        ):
+    def test_folders(self):
+        if not os.path.isdir("%s/atts" % route) and not os.path.isfile(config_file):
             result = "Required files and folders are not being created"
         else:
             result = "Ok"
@@ -125,16 +125,14 @@ class TestBasics(unittest.TestCase):
 
 
 class Decode(unittest.TestCase):
-    example = File(example_file)
-
-    def checkVariable(self):
+    def test_variables(self):
         self.assertEqual(
             example.variables["hgtprs"].coords["time"].values,
             [737842.0, 737842.125, 737842.25, 737842.375, 737842.0],
         )
 
-    def checkData(self):
-        self.assertEqual(example.variables["hgtmwl"].values, [[[9504.847]]])
+    def test_data(self):
+        self.assertEqual(example.variables["hgtmwl"].data, [[[9504.847]]])
 
 
 if __name__ == "__main__":
