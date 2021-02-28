@@ -81,7 +81,7 @@ class Forecast:
 
         Args:
             variables (list): list of required variables by short name
-            date_time (string): datetime requested (parser used so any format fine) 
+            date_time (string): datetime requested (parser used so any format fine)
             lat (string or number): latitude in the format "[min:max]" or a single value
             lon (string or number): longitude in the format "[min:max]" or a single value
 
@@ -172,7 +172,7 @@ class Forecast:
             string: forecast date
             string: forecast run
             string: forecast query time (the appropriate timestep within the forecast)
-        """        
+        """
         earliest_available = hour_round(datetime.utcnow() - timedelta(days=7))
         latest_available = hour_round(
             datetime.utcnow()
