@@ -5,7 +5,7 @@ getgfs extracts weather forecast variables from the NOAA GFS forecast in a pure 
 - Download variables for any time range, longitude, latitude and altitude
 - Download "wind profiles" where you get an interpolation object for the u and v wind components by altitude
 
-For full documentation please see the [docs]()
+For full documentation please see the [docs](https://getgfs.readthedocs.io/en/latest/)
 
 # Installing
 Installation is simple with PyPi:
