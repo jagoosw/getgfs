@@ -402,6 +402,8 @@ def get_attributes(res, step):
         )
         if r.status_code != 200:
             raise Exception("The forecast resolution and timestep was not found")
+        elif r.text[:5]=="Error":
+            raise Exception("The forcast resolution and timestep was not found, the service returned the error {err}".format(err=re.findall('(message = ")((.|\n)*)"',r.text)))
         search_text = re.sub("\s{2,}", "", r.text[12:-2])
         raws = re.findall(r"(.*?) \{(.*?)\}", search_text)
         variables = {}
