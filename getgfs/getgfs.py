@@ -142,7 +142,7 @@ class Forecast:
         )
         if r.status_code != 200:
             raise Exception(
-                """The altitude pressure forecast information could not be downloaded. 
+                """The forecast information could not be downloaded. 
         This error should never occure but it may be helpful to know the requested information was:
         - Forecast date: {f_date}
         - Forecast time: {f_time}
@@ -156,8 +156,29 @@ class Forecast:
                     lon=lon,
                 )
             )
-
-        return File(r.text)
+        elif r.text[:6]=="<html>":
+            raise Exception(
+                """The forecast information could not be downloaded. 
+        This error should never occure but it may be helpful to know the requested information was:
+        - Forecast date: {f_date}
+        - Forecast time: {f_time}
+        - Query time: {q_time}
+        - Latitude: {lat}
+        - Longitude: {lon}
+        
+        The response given was: {res}
+        
+        Sometimes forcasts do not becone available when they should (e.g. when 06hr is availble in 0p25 it isn't in 0p50)""".format(
+                    f_date=forecast_date,
+                    f_time=forecast_time,
+                    q_time=query_time,
+                    lat=lat,
+                    lon=lon,
+                    res=re.findall("""(<h2>GrADS Data Server - error<\/h2>)((.|\n)*)(Check the syntax of your request, or click <a href=".help">here<\/a> for help using the server.)""",r.text),
+                )
+            )
+        else:
+            return File(r.text)
 
     def datetime_to_forecast(self, date_time):
         """Works out which forecast date/run/time is required for the latest values for a chosen time

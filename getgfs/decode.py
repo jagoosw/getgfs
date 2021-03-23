@@ -55,7 +55,10 @@ class File:
         ind_head = 0
         variables = []
         while ind_head < len(text):
-            variable_name = re.findall("(.*?), ", text[ind_head])[0]
+            try:
+                variable_name = re.findall("(.*?), ", text[ind_head])[0]
+            except IndexError:
+                raise ValueError("Likely that file entered was not the correct format")
             dims = re.findall("\[(.*?)\]", text[ind_head])
             dims.reverse()
             lines_data = 0
