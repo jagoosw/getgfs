@@ -4,7 +4,7 @@ setup(
     # Application name:
     name="getgfs",
     # Version number (initial):
-    version="0.0.0",
+    version="0.0.1",
     # Application author details:
     author="Jago Strong-Wright",
     author_email="jagoosw@protonmail.com",
