@@ -353,17 +353,21 @@ class Forecast:
         v_wind = list(info.variables["vgrdprs"].data.flatten()) + list(
             info.variables["vgrd10m"].data.flatten()
         )
-        print(list(info.variables["vgrdprs"].data.flatten()),list(
-            info.variables["vgrd10m"].data.flatten()))
+        print(
+            list(info.variables["vgrdprs"].data.flatten()),
+            list(info.variables["vgrd10m"].data.flatten()),
+        )
 
         # at the altitudes we are concerned with the geopotential height and altitude are within 0.5km of eachother
         alts = list(info.variables["hgtprs"].data.flatten()) + list(
-            info.variables["hgtsfc"].data.flatten()+10
+            info.variables["hgtsfc"].data.flatten() + 10
         )
         print(alts)
 
-        return interp1d(alts, u_wind, fill_value=(u_wind[-1],u_wind[-2]), bounds_error=False), interp1d(
-            alts, v_wind, fill_value=(v_wind[-1],v_wind[-2]), bounds_error=False
+        return interp1d(
+            alts, u_wind, fill_value=(u_wind[-1], u_wind[-2]), bounds_error=False
+        ), interp1d(
+            alts, v_wind, fill_value=(v_wind[-1], v_wind[-2]), bounds_error=False
         )
 
     def __str__(self):
