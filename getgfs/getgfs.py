@@ -335,7 +335,7 @@ class Forecast:
             info.variables["hgtsfc"].data.flatten()
         )
 
-        return interp1d(alts, u_wind), interp1d(alts, v_wind)
+        return interp1d(alts, u_wind, fill_value="extrapolate"), interp1d(alts, v_wind, fill_value="extrapolate")
 
     def __str__(self):
         print(type(self))

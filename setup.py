@@ -4,14 +4,14 @@ setup(
     # Application name:
     name="getgfs",
     # Version number (initial):
-    version="0.0.0",
+    version="0.0.3",
     # Application author details:
     author="Jago Strong-Wright",
     author_email="jagoosw@protonmail.com",
     # Packages
     packages=["getgfs"],
     # Details
-    url="https://github.com/jagoosw/getgfs/",
+    url="https://getgfs.readthedocs.io/",
     #
     license="LICENSE.txt",
     description="Extracts weather forecast variables from the NOAA GFS forecast in a pure python, no obscure dependencies way",
