@@ -353,10 +353,6 @@ class Forecast:
         v_wind = list(info.variables["vgrdprs"].data.flatten()) + list(
             info.variables["vgrd10m"].data.flatten()
         )
-        print(
-            list(info.variables["vgrdprs"].data.flatten()),
-            list(info.variables["vgrd10m"].data.flatten()),
-        )
 
         # at the altitudes we are concerned with the geopotential height and altitude are within 0.5km of eachother
         alts = list(info.variables["hgtprs"].data.flatten()) + list(
