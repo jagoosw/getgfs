@@ -3,3 +3,6 @@ gfspy/.DS_Store
 .DS_Store
 *.pyc
 *.pyc
+b
+build/
+build/lib/getgfs/__init__.py
