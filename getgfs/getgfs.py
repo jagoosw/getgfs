@@ -156,7 +156,7 @@ class Forecast:
                     lon=lon,
                 )
             )
-        elif r.text[:6]=="<html>":
+        elif r.text[:6] == "<html>":
             raise Exception(
                 """The forecast information could not be downloaded. 
         This error should never occure but it may be helpful to know the requested information was:
@@ -174,7 +174,10 @@ class Forecast:
                     q_time=query_time,
                     lat=lat,
                     lon=lon,
-                    res=re.findall("""(<h2>GrADS Data Server - error<\/h2>)((.|\n)*)(Check the syntax of your request, or click <a href=".help">here<\/a> for help using the server.)""",r.text),
+                    res=re.findall(
+                        """(<h2>GrADS Data Server - error<\/h2>)((.|\n)*)(Check the syntax of your request, or click <a href=".help">here<\/a> for help using the server.)""",
+                        r.text,
+                    ),
                 )
             )
         else:
