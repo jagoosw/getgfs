@@ -362,7 +362,7 @@ def get_attributes(res, step):
         config = json.load(f)
     if "{res}{step}".format(res=res, step=step) not in config["saved_atts"]:
         if datetime.utcnow().hour < 6:
-            date = datetime.utcnow() - timedelta(day=1)
+            date = datetime.utcnow() - timedelta(days=1)
         else:
             date = datetime.utcnow()
         r = requests.get(
