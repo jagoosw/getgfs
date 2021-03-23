@@ -113,7 +113,7 @@ example = File(example_file)
 class TestBasics(unittest.TestCase):
     def test_attribute(self):
         self.assertEqual(
-            Forecast("0p25","1hr").times, {'grads_size': '121', 'grads_step': '1hr'}
+            Forecast("0p25", "1hr").times, {"grads_size": "121", "grads_step": "1hr"}
         )
 
     def test_folders(self):
