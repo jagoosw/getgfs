@@ -358,7 +358,6 @@ class Forecast:
         alts = list(info.variables["hgtprs"].data.flatten()) + list(
             info.variables["hgtsfc"].data.flatten() + 10
         )
-        print(alts)
 
         return interp1d(
             alts, u_wind, fill_value=(u_wind[-1], u_wind[-2]), bounds_error=False
