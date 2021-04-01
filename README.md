@@ -1,4 +1,6 @@
 # getgfs
+[![Tests](https://github.com/jagoosw/getgfs/actions/workflows/test.yml/badge.svg)](https://github.com/jagoosw/getgfs/actions/workflows/test.yml)[![Black Linting](https://github.com/jagoosw/getgfs/actions/workflows/black.yml/badge.svg)](https://github.com/jagoosw/getgfs/actions/workflows/black.yml)
+
 getgfs extracts weather forecast variables from the NOAA GFS forecast in a pure python, no obscure dependencies way. Currently you can:
 - "Connect" to a forecast
 - Search the variables 
