@@ -446,7 +446,7 @@ def get_attributes(res, step):
             url.format(
                 res=res,
                 step=step,
-                date=date.today().strftime("%Y%m%d"),
+                date=(date.today() - timedelta(days=2)).strftime("%Y%m%d"),
                 hour=0,
                 info="dds",
             )
@@ -454,6 +454,11 @@ def get_attributes(res, step):
         if r.status_code != 200:
             raise RuntimeError("The forecast resolution and timestep was not found")
         arrays = re.findall(r"ARRAY:\n(.*?)\n", r.text)
+
+        if len(arrays) == 0:
+            raise RuntimeError(
+                "The forecast datetime was not found, please report as this should no longer occur"
+            )
         for array in arrays:
             var = re.findall(r"(.*?)\[", array)[0].split()[1]
             if var in variables.keys():
