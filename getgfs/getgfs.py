@@ -1,13 +1,15 @@
 """getgfs - a library for extracting weather forecast variables from the NOAA GFS forecast in a pure python, no obscure dependencies way
 """
-import requests, json, os, re, dateutil.parser, sys
+import requests, json, os, re, dateutil.parser, sys, warnings
 from datetime import datetime, timedelta
 import numpy as np
 from scipy.interpolate import interp1d
 from .decode import *
 
 try:
-    from fuzzywuzzy import fuzz
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from fuzzywuzzy import fuzz
 except:
     pass
 
