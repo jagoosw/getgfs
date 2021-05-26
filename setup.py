@@ -4,7 +4,7 @@ setup(
     # Application name:
     name="getgfs",
     # Version number (initial):
-    version="0.0.9",
+    version="1.0.0",
     # Application author details:
     author="Jago Strong-Wright",
     author_email="jagoosw@protonmail.com",
@@ -14,8 +14,7 @@ setup(
     url="https://getgfs.readthedocs.io/",
     #
     license="LICENSE.txt",
-    description="Extracts weather forecast variables from the NOAA GFS forecast in a pure python, no obscure dependencies way",
-    long_description="""Please see the homepage as the readme wouldn't render here""",
+    description="getgfs extracts weather forecast variables from the NOAA GFS forecast with no obscure depdndencies (looking at you ecCodes)",
     # Dependent packages (distributions)
     install_requires=[
         "scipy",
