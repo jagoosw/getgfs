@@ -256,8 +256,8 @@ class Forecast:
         """
         if isinstance(inpt, str):
             if inpt[0] == "[" and inpt[-1] == "]" and ":" in inpt:
-                val_1 = float(re.findall(r"\[(.*?):", inpt))
-                val_2 = float(re.findall(r"\:(.*?)]", inpt))
+                val_1 = float(re.findall(r"\[(.*?):", inpt)[0])
+                val_2 = float(re.findall(r"\:(.*?)]", inpt)[0])
                 val_min = self.value_to_index(coord, min(val_1, val_2))
                 val_max = self.value_to_index(coord, max(val_1, val_2))
                 ind = "[%s:%s]" % (val_min, val_max)
