@@ -185,6 +185,21 @@ class Forecast:
         else:
             return File(r.text)
 
+    def check_avail(self, forecast_date, forecast_time):
+        r = requests.get(
+            url.format(
+                res=self.resolution,
+                step=self.timestep,
+                date=forecast_date,
+                hour=int(forecast_time),
+                info="ascii?gustsfc[0][540][1260]",
+            )
+        )
+        if r.text[:6] == "<html>":
+            return False
+        else:
+            return True
+
     def datetime_to_forecast(self, date_time):
         """Works out which forecast date/run/time is required for the latest values for a chosen time
 
@@ -222,6 +237,11 @@ class Forecast:
 
             forecast_date = query_forecast.strftime("%Y%m%d")
             forecast_time = query_forecast.strftime("%H")
+
+            while not self.check_avail(forecast_date, forecast_time):
+                query_forecast -= timedelta(hours=6)
+                forecast_date = query_forecast.strftime("%Y%m%d")
+                forecast_time = query_forecast.strftime("%H")
 
             query_time = "[{t_ind}]".format(
                 t_ind=round(
