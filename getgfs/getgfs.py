@@ -258,6 +258,9 @@ class Forecast:
             if inpt[0] == "[" and inpt[-1] == "]" and ":" in inpt:
                 val_1 = float(re.findall(r"\[(.*?):", inpt)[0])
                 val_2 = float(re.findall(r"\:(.*?)]", inpt)[0])
+                if coord == "lon":
+                    val_1 = val_1 % 360
+                    val_2 = val_2 % 360
                 val_min = self.value_to_index(coord, min(val_1, val_2))
                 val_max = self.value_to_index(coord, max(val_1, val_2))
                 ind = "[%s:%s]" % (val_min, val_max)
@@ -269,8 +272,12 @@ class Forecast:
                         "The format of the %s variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
                         % (coord, inpt)
                     )
+                if coord == "lon":
+                    inpt = inpt % 360
                 ind = "[%s]" % self.value_to_index(coord, inpt)
         else:
+            if coord == "lon":
+                inpt = inpt % 360
             ind = "[%s]" % self.value_to_index(coord, inpt)
 
         return ind
