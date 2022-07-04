@@ -14,7 +14,7 @@ setup(
     url="https://getgfs.readthedocs.io/",
     #
     license="LICENSE.txt",
-    description="getgfs extracts weather forecast variables from the NOAA GFS forecast with no obscure depdndencies (looking at you ecCodes)",
+    description="getgfs extracts weather forecast variables from the NOAA GFS forecast",
     # Dependent packages (distributions)
     install_requires=[
         "scipy",

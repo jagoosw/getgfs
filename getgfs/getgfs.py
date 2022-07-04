@@ -185,6 +185,21 @@ class Forecast:
         else:
             return File(r.text)
 
+    def check_avail(self, forecast_date, forecast_time):
+        r = requests.get(
+            url.format(
+                res=self.resolution,
+                step=self.timestep,
+                date=forecast_date,
+                hour=int(forecast_time),
+                info="ascii?gustsfc[0][540][1260]",
+            )
+        )
+        if r.text[:6] == "<html>":
+            return False
+        else:
+            return True
+
     def datetime_to_forecast(self, date_time):
         """Works out which forecast date/run/time is required for the latest values for a chosen time
 
@@ -223,6 +238,11 @@ class Forecast:
             forecast_date = query_forecast.strftime("%Y%m%d")
             forecast_time = query_forecast.strftime("%H")
 
+            while not self.check_avail(forecast_date, forecast_time):
+                query_forecast -= timedelta(hours=6)
+                forecast_date = query_forecast.strftime("%Y%m%d")
+                forecast_time = query_forecast.strftime("%H")
+
             query_time = "[{t_ind}]".format(
                 t_ind=round(
                     (desired_date - query_forecast).seconds
@@ -256,8 +276,11 @@ class Forecast:
         """
         if isinstance(inpt, str):
             if inpt[0] == "[" and inpt[-1] == "]" and ":" in inpt:
-                val_1 = float(re.findall(r"\[(.*?):", inpt))
-                val_2 = float(re.findall(r"\:(.*?)]", inpt))
+                val_1 = float(re.findall(r"\[(.*?):", inpt)[0])
+                val_2 = float(re.findall(r"\:(.*?)]", inpt)[0])
+                if coord == "lon":
+                    val_1 = val_1 % 360
+                    val_2 = val_2 % 360
                 val_min = self.value_to_index(coord, min(val_1, val_2))
                 val_max = self.value_to_index(coord, max(val_1, val_2))
                 ind = "[%s:%s]" % (val_min, val_max)
@@ -269,8 +292,12 @@ class Forecast:
                         "The format of the %s variable was incorrect, it must either be a single number or a range in the format [min:max]. You entered '%s'"
                         % (coord, inpt)
                     )
+                if coord == "lon":
+                    inpt = inpt % 360
                 ind = "[%s]" % self.value_to_index(coord, inpt)
         else:
+            if coord == "lon":
+                inpt = inpt % 360
             ind = "[%s]" % self.value_to_index(coord, inpt)
 
         return ind
