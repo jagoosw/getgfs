@@ -245,7 +245,7 @@ class Forecast:
 
             query_time = "[{t_ind}]".format(
                 t_ind=round(
-                    (desired_date - query_forecast).seconds
+                    (desired_date - query_forecast).total_seconds()
                     / (int(self.times["grads_step"][0]) * 60 * 60)
                 )
             )
